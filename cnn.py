@@ -44,7 +44,7 @@ conv1d(output size, filter size)
 结构：
     word embedding: 因为这组dataset最多就31个单词，所以这里dimension只用10
                     在正式做CNN前可以加一层dropout，也能有效反正overfitting
-    
+
     1层convolution 每层结尾 maxpooling
     Flatten  (用于maxpooling后连接到dense layer的转变)
     1层dense

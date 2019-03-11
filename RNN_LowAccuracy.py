@@ -49,7 +49,7 @@ Dense with softmax
 model.add(Embedding(vocab_size, embedding_dim, input_length=max_len))
 # model.add(Dropout(0.2))
 model.add(Bidirectional(LSTM(units=300, activation='tanh',
-                             kernel_initializer='glorot_uniform')))
+                             kernel_initializer='glorot_uniform'), merge_mode='sum'))
 # activation='tanh',kernel_initializer = 'glorot_uniform'
 model.add(Dropout(0.2))
 model.add(Dense(2, activation='softmax'))
