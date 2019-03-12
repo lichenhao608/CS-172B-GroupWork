@@ -34,7 +34,7 @@ text, y = [], []
 with open('sentiment labelled sentences\\sentiment labelled sentences\\amazon_cells_labelled.txt') as f:
     a = f.readlines()
 
-random.shuffle(a)
+# random.shuffle(a)
 for t in a:
     c, b = t.split('\t')
     text.append(c)
