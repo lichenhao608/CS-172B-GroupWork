@@ -4,6 +4,7 @@ import random
 import keras
 import tensorflow as tf
 import numpy as np
+import sherpa
 import matplotlib.pyplot as plt
 from keras import backend as K
 from gensim.models import Word2Vec
@@ -15,7 +16,6 @@ from keras.layers import Bidirectional, BatchNormalization, SpatialDropout1D
 from keras.preprocessing.text import Tokenizer
 from nltk.tokenize.regexp import RegexpTokenizer
 from keras.preprocessing.sequence import pad_sequences
-#from keras.optimizers import SGD
 
 gpuid = 0  # An index of which gpu to use.
 os.environ['KERAS_BACKEND'] = 'tensorflow'
@@ -29,7 +29,6 @@ CONFIG.gpu_options.allow_growth = True
 sess = tf.Session(config=CONFIG)
 K.set_session(sess)
 
-
 text, y = [], []
 with open('sentiment labelled sentences\\sentiment labelled sentences\\amazon_cells_labelled.txt') as f:
     a = f.readlines()
@@ -39,18 +38,6 @@ for t in a:
     c, b = t.split('\t')
     text.append(c)
     y.append(int(b))
-
-# Simple Word embedding method
-# word embedding
-# tok = Tokenizer()
-# tok.fit_on_texts(set(sum([x.split() for x in text], [])))
-# print(tok.document_count)
-
-# # find the max sentence(we can set by ourselves if we know the number)
-# max_len = max([len(x.split()) for x in text])
-# nb_words = len(tok.word_index) + 1
-# data = pad_sequences(tok.texts_to_sequences(
-#     text), maxlen=max_len, padding='post')
 
 # Word2Vec Embedding
 tok = RegexpTokenizer(r'\w+|\!|\?|\.')
@@ -90,13 +77,6 @@ max_len = max(len(i) for i in comment)
 word_index = {t[0]: i + 1 for i,
               t in enumerate(vocab.most_common(max_nb_word))}
 
-
-'''
-sequences = [[word_index.get(t, 0) for t in c]
-             for c in comment[:900]]
-test_sequences = [[word_index.get(t, 0) for t in c]
-                  for c in comment[900:]]
-'''
 sequences = [[word_index.get(t, 0) for t in c]
              for c in comment]
 data = pad_sequences(sequences, maxlen=max_len, padding='post')
@@ -106,8 +86,7 @@ x_test = data[900:]
 y_train = y[:900]
 y_test = y[900:]
 
-
-wv_dim = 100
+wv_dim = 50
 
 nb_words = min(max_nb_word, len(wordvec.vocab))+1
 # we initialize the matrix with random numbers
@@ -127,11 +106,12 @@ print(max_len)
 nn_model = Sequential()
 nn_model.add(Embedding(nb_words, wv_dim, mask_zero=False, weights=[
     wv_matrix], input_length=max_len))
-# nn_model.add(Embedding(nb_words, wv_dim,
-#                        mask_zero=False, input_length=max_len))
 
-nn_model.add(SpatialDropout1D(0.2))
-nn_model.add((CuDNNLSTM(15)))
+# nn_model.add(SpatialDropout1D(0.2))
+nn_model.add(Dropout(0.1))
+nn_model.add(Conv1D(64, 5, activation='relu'))
+nn_model.add(MaxPooling1D(10))
+nn_model.add(Bidirectional(CuDNNLSTM(20)))
 nn_model.add(Dropout(0.1))
 
 # nn_model.add(BatchNormalization())
@@ -139,13 +119,6 @@ nn_model.add(Dense(1, activation='sigmoid'))
 nn_model.compile(loss='binary_crossentropy',
                  optimizer='adam', metrics=['accuracy'])
 '''
-# Convelutional Neural Networks
-nn_model.add(Dropout(0.1))
-
-# layer 1
-nn_model.add(Conv1D(64, 5, activation='relu'))
-nn_model.add(MaxPooling1D(5))
-
 # layer 2
 # model.add(Conv1D(64, 5, activation = 'relu'))
 # model.add(MaxPooling1D(5))
@@ -164,13 +137,10 @@ nn_model.add(Dense(1, activation='sigmoid'))
 
 # training and get score
 nn_model.compile(loss='binary_crossentropy',
-                 optimizer='adam', metrics=['accuracy'])
+                optimizer='adam', metrics=['accuracy'])
 '''
-print(nn_model.summary())
-for layer in nn_model.layers:
-    print(layer.input_shape)
 history = nn_model.fit(data, y, validation_split=0.2,
-                       batch_size=30, epochs=10)
+                       batch_size=30, epochs=20)
 score = nn_model.evaluate(x_train, y_train)
 print("Training Accuracy: {:.4f}".format(score[1]))
 score = nn_model.evaluate(x_test, y_test)
